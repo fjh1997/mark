@@ -19,7 +19,11 @@ for (let i = 1; i <= 9; i++) {
     await page.locator("#index_"+i.toString()+" > div > div:nth-child(2) > div.commentArea.fr > div:nth-child(3) > ul > li.fastScore").click();
     
     }  
-
+    if(value==0){
+        console.log("不满分");
+        await page.locator("#index_"+i.toString()+" > div > div:nth-child(2) > div.commentArea.fr > div.clearfix.com_markDiv > div > input").fill('0');
+        
+        }  
 
 
 }
