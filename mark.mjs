@@ -1,5 +1,22 @@
 import puppeteer from 'puppeteer';
 // Or import puppeteer from 'puppeteer-core';
+async function autoScroll(page, distance = 100, toScrollHeight = 120000) {
+  await page.evaluate(async ({ distance, toScrollHeight }) => {
+    await new Promise((resolve, reject) => {
+      var totalHeight = 0;
+      var timer = setInterval(([distanceTime, toScrollHeightTime]) => {
+        var scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distanceTime);
+        totalHeight += distanceTime;
+
+        if (totalHeight >= scrollHeight || totalHeight > toScrollHeightTime) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 100, [distance, toScrollHeight]);
+    });
+  }, { distance, toScrollHeight });
+}
 
 // Launch the browser and open a new blank page
 const browser = await puppeteer.launch({ headless: false, userDataDir: './my-user-data' , defaultViewport: null});
@@ -8,7 +25,9 @@ const page = await browser.newPage();
 await page.goto('https://mooc2-ans.chaoxing.com/mooc2-ans/exam/test/markpaper?courseid=241341550&gid=0&classid=106186411&groupid=-1&paperId=409998715&id=146276062&start=0&checkHiddenTitle=0&checkHiddenAnswer=0&checkSubjectAnswerWordNum=0&checkHiddenObjectQuestion=1&sheet=0&groupIds=');
 const processPage = async (page) => {
 await page.setViewport({width: 1080, height: 1024});
+
 await page.waitForSelector('#index_1 > div > div:nth-child(1) > div > div.mark_answer.topicStudentAnswer > div.mark_score > div.totalScore.fl > input')
+await autoScroll(page, 80, 2200)
 
 for (let i = 1; i <= 9; i++) {
     const scoreSelector=await page.locator('#index_'+i.toString()+' > div > div:nth-child(1) > div > div.mark_answer.topicStudentAnswer > div.mark_score > div.totalScore.fl > input').waitHandle();
@@ -27,14 +46,25 @@ for (let i = 1; i <= 9; i++) {
 
 
 }
-await page.locator("#index_10 > div.clearfix.topicArea_commentArea > div.commentArea.fr > div:nth-child(3) > ul > li:nth-child(1)").click();
 
+
+
+const ansSelector=await page.locator('#bbsStem_883997603').waitHandle();
+const answer=await ansSelector?.evaluate(el => el.getAttribute("answer"));
+await page.locator("#index_10 > div.clearfix.topicArea_commentArea > div.commentArea.fr > div:nth-child(3) > ul > li:nth-child(1)").click();
 
 await page.setViewport({
     width: 1024,
     height: 768,
     deviceScaleFactor: 1,
   });
+if(answer.length>20){
+  await page.locator("#submitMarking > div.gradeFooter > div.footRight.fr > a.foot-btn-submit-next.jb_btn.jb_btn_160.fr").click();
+
+}
+
+
+
 await page.waitForNavigation({ waitUntil: 'domcontentloaded' })
 processPage(page)
 
